@@ -73,3 +73,7 @@ One of the main cores of this project and using Python was to keep everything as
 cd <env_name>/Scripts && activate.bat && cd ../../src
 python maingui.py
 ```
+
+### Older versions
+To see older versions and the whole development process of the code, refer to the following repository:
+https://github.com/pu19249/robotat-gui
