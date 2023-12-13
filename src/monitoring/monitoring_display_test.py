@@ -153,9 +153,6 @@ def animation_function():
         
         animation_window.start_animation()
         
-        # Assuming x_vals_display_robot, y_vals_display_robot, theta_vals_display_robot are your data
-        # writer.writerow([x_vals_display_robot[0][0], y_vals_display_robot[0][1], theta_vals_display_robot[0][5]])
-
 
 
 if __name__ == "__main__":
