@@ -1,10 +1,3 @@
-# Call the platformio project that has the initalization
-
-# Prepare each of the ESP32 of the robots selected
-
-# Choose whether to load data from simulation or another file to upload
-
-
 import sys
 import os
 import subprocess
@@ -16,12 +9,17 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 from ota.wifi_connect import NetworkManager
 
+### ------------- END OF IMPORTS --------------
+
 class Worker_prepare_esp_for_update(QThread):
+    '''
+    This function is to call it from the GUI and make the Prepare Upload, and display the Progress output on the same GUI without freezing while running both processes. It calls the PlatformIO project that has the 'Prepare' code and executes the Upload using the PlatformIO CLI commands with the subprocess module.
+    '''
     finished = pyqtSignal()
     progress = pyqtSignal(str)
 
     def run(self):
-        print('subiendo!')
+        print('Subiendo!')
         sketch_directory = os.path.join(
             str(Path(__file__).parent), "esp32dev_ota_prepare"
         )
@@ -51,6 +49,9 @@ class Worker_prepare_esp_for_update(QThread):
 
 
 class Worker_load_sketch(QThread):
+    '''
+    This function is to call it from the GUI and make the New Sketch Upload, and display the Progress output on the same GUI without freezing while running both processes. It calls the PlatformIO project that has the 'New Project' code and executes the Upload using the PlatformIO CLI commands with the subprocess module. It also connects the computer to the WiFi Network as this step is needed to make the OTA update.
+    '''
     finished = pyqtSignal()
     progress = pyqtSignal(str)
 
@@ -62,8 +63,7 @@ class Worker_load_sketch(QThread):
         self.NetWork = NetworkManager()
         self.Robotat_SSID = "Robotat"
         self.Robotat_Password = "iemtbmcit116"
-        # self.Robotat_SSID = "TIGO-F4CD"
-        # self.Robotat_Password = "4NJ667300826"
+
         self.NetWork.define_network_parameters(self.Robotat_SSID, self.Robotat_Password)
     def init_connection(self):
         if not self.NetWork.is_connected_to_network():

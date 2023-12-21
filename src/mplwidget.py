@@ -9,7 +9,10 @@ from matplotlib.figure import Figure
 
     
 class MplWidget(QWidget):
-    
+    '''
+    This class is used to embed a matplotlib figure in the GUI.
+    Basic settings should be modified here.
+    '''
     def __init__(self, parent = None):
 
         QWidget.__init__(self, parent)

@@ -3,9 +3,9 @@ import os
 import ctypes
 from typing import *
 import numpy
-import math
 import csv
 
+### ------------- END OF IMPORTS -------------
 # Get the directory path of the current script, abspath because of the tree structure
 # that everything is on different folders
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -74,7 +74,7 @@ class button_pygame:
 
 
 # class for handling position and orientation on the animation window
-# also collision because is related with the rect it occupates
+# also collision because is related with the 'rect.' it occupates
 class robot_character:
     """
     Class to handle position and orientation update (image)
@@ -372,11 +372,11 @@ class py_game_animation:
 
 class py_game_monitoring(py_game_animation):
     """
-    Child class of the pygame animation window for simulated (pre-calculated) data.
+    Child class of the pygame animation window for real time data.
     What changes here is the start_animation method, instead of iteration over data, it receives
     constantly new data as it's intended for real time display of the motion of the robots.
     The data is obtained by an external system (OptiTrack).
-    #"""
+    """
 
     def __init__(self, width, height, data_src_funct, filename):
         super().__init__(width, height)
@@ -384,15 +384,6 @@ class py_game_monitoring(py_game_animation):
         self.filename = filename
 
     def start_animation(self):
-        """
-        It takes the arrays to animate the robots based on simulation data,
-        it also handles the pygame events to start and stop the animation. The basic flow of this is
-        that it iterates over the robot_characters added previously, and for each index it looks for the
-        corresponding data on the numpy arrays, to assign the corresponding x, y, theta data for each robot.
-        Then with the robot_character methods, it updates the picture position and orientation, deleting the
-        previous one until it reaches the final data.
-
-        """
         pygame.init()
         index = (
             0  # Initialize the index for accessing x_values, y_values and theta_values
@@ -404,7 +395,14 @@ class py_game_monitoring(py_game_animation):
         while self.run:
             self.clock.tick(60)
             self.play.draw()  # Update the play button
-            x_values, y_values, theta_values, x_raw, y_raw, theta_raw = self.data_src_funct()
+            (
+                x_values,
+                y_values,
+                theta_values,
+                x_raw,
+                y_raw,
+                theta_raw,
+            ) = self.data_src_funct()
             with open(self.filename + ".csv", "a", newline="") as file:
                 writer = csv.writer(file)
                 field = [
@@ -412,9 +410,6 @@ class py_game_monitoring(py_game_animation):
                     "y position",
                     "orientation",
                 ]  # titles of the columns
-                #writer.writerow(i for i in field)
-                # Write the field names only once, not in every iteration
-                # writer.writerow(field)
                 writer.writerow([x_raw[0], y_raw[0], theta_raw[0]])
             # print(x_raw, y_raw, theta_raw)
             # print(x_values, y_values, theta_values)
@@ -423,10 +418,6 @@ class py_game_monitoring(py_game_animation):
                     robot.degree = float(theta[0]) + 180
                     robot.x = int(x[0])
                     robot.y = int(y[0])
-                    # Flip the character over the x-axis
-            
-
-                    # print(robot.theta)
 
             # Flag to terminate window correctly without crashing all Python execution
             for e in pygame.event.get():
@@ -486,13 +477,15 @@ class py_game_monitoring(py_game_animation):
 
         # pygame.quit()  # Quit Pygame after the loop finishes
 
+
 class py_game_monitoring_multiple(py_game_animation):
     """
-    Child class of the pygame animation window for simulated (pre-calculated) data.
+    Child class of the pygame animation window for real time data.
     What changes here is the start_animation method, instead of iteration over data, it receives
     constantly new data as it's intended for real time display of the motion of the robots.
     The data is obtained by an external system (OptiTrack).
-    #"""
+    This version is for more than one marker.
+    """
 
     def __init__(self, width, height, data_src_funct, filename):
         super().__init__(width, height)
@@ -500,39 +493,31 @@ class py_game_monitoring_multiple(py_game_animation):
         self.filename = filename
 
     def start_animation(self):
-        """
-        It takes the arrays to animate the robots based on simulation data,
-        it also handles the pygame events to start and stop the animation. The basic flow of this is
-        that it iterates over the robot_characters added previously, and for each index it looks for the
-        corresponding data on the numpy arrays, to assign the corresponding x, y, theta data for each robot.
-        Then with the robot_character methods, it updates the picture position and orientation, deleting the
-        previous one until it reaches the final data.
-
-        """
         pygame.init()
         index = (
             0  # Initialize the index for accessing x_values, y_values and theta_values
         )
         animation_running = True
 
-        # for robot_index in range(len(self.robot_characters)):
-        #     x_robot = x_values[0][robot_index]  # Initial x position
-        #     y_robot = y_values[0][robot_index]  # Initial y position
-        #     theta_robot = theta_values[0][robot_index]  # Initial theta value
-        #     self.robot_characters[robot_index].update(theta_robot, x_robot, y_robot)
-        #     self.robot_characters[robot_index].rotate_move()
-
-        #pygame.display.flip()
         pygame.time.delay(10)
 
         while self.run:
             self.clock.tick(60)
             self.play.draw()  # Update the play button
-            x_values, y_values, theta_values, x_raw, y_raw, theta_raw = self.data_src_funct()
+            (
+                x_values,
+                y_values,
+                theta_values,
+                x_raw,
+                y_raw,
+                theta_raw,
+            ) = self.data_src_funct()
             # Separate data into pairs
-            pairs_x = [x_values[i:i+2] for i in range(0, len(x_values), 2)]
-            pairs_y = [y_values[i:i+2] for i in range(0, len(y_values), 2)]
-            pairs_theta = [theta_values[i:i+2] for i in range(0, len(theta_values), 2)]
+            pairs_x = [x_values[i : i + 2] for i in range(0, len(x_values), 2)]
+            pairs_y = [y_values[i : i + 2] for i in range(0, len(y_values), 2)]
+            pairs_theta = [
+                theta_values[i : i + 2] for i in range(0, len(theta_values), 2)
+            ]
             # Print the pairs
             # for pair in pairs_x:
             #     print(pair)
@@ -543,12 +528,12 @@ class py_game_monitoring_multiple(py_game_animation):
                     "y position",
                     "orientation",
                 ]  # titles of the columns
-                #writer.writerow(i for i in field)
-                # Write the field names only once, not in every iteration
-                # writer.writerow(field)
-                writer.writerow([x_raw[0], y_raw[0], theta_raw[0], x_raw[1], y_raw[1], theta_raw[1]])
+
+                writer.writerow(
+                    [x_raw[0], y_raw[0], theta_raw[0], x_raw[1], y_raw[1], theta_raw[1]]
+                )
             # print(x_raw, y_raw, theta_raw)
-                
+
             for x, y, theta in zip(pairs_x, pairs_y, pairs_theta):
                 # print(x, y, theta)
                 for i, robot in enumerate(self.robot_characters):
@@ -557,7 +542,6 @@ class py_game_monitoring_multiple(py_game_animation):
                     robot.x = int(x[i][0])
                     robot.y = int(y[i][0])
                     # Additional modifications to the individual robot's attributes can be added here
-                    # For example, you might want to update other attributes of the robot
 
             # Flag to terminate window correctly without crashing all Python execution
             for e in pygame.event.get():
@@ -580,31 +564,11 @@ class py_game_monitoring_multiple(py_game_animation):
                     ):
                         # Handle collision here (e.g., change color, stop movement, etc.)
                         print("collision")
-                        # animation_running = False  # Stop the animation
-                        # pygame.time.delay(1000)  # Wait until pygame window closes
-                        # self.run = False
 
             for robot in self.robot_characters:
                 if not self.bounding_box.collidepoint(robot.x, robot.y):
                     # Handle collision with bounding box (e.g., stop movement, change direction, etc.)
                     print("collision")
-                    # animation_running = False  # Stop the animation
-                    # pygame.time.delay(1000)
-                    # self.run = False
-
-            # if animation_running:  # and index < len(x_values):
-            #     for i in range(len(self.robot_characters)):
-            #         x_robot = x_values[index][i]
-            #         y_robot = y_values[index][i]
-            #         theta_robot = theta_values[index][i]
-            #         robot = self.robot_characters[i]
-            #         print(x_robot, y_robot, theta_robot)
-            #         # Update character attributes and animations
-            #         robot.update(theta_robot, x_robot, y_robot)
-            #         robot.rotate_move()
-
-            #         pygame.display.flip()
-            #         pygame.time.delay(10)
 
                 pygame.display.flip()
                 pygame.time.delay(10)

@@ -1,8 +1,6 @@
 /**
- * Project:     Control for the Pololu 3Pi+ template with OTA
- * Doc:
- * Proj URL:
- * Author:      Jonathan Pu
+ * Project:     Control template for the Pololu 3Pi+  with OTA
+ * Author/Modified by:      Jonathan Pu
  * Created:     october 2023
  */
 
@@ -15,28 +13,23 @@
 #include <tinycbor.h>
 #include "codegen.h"
 #include <ArduinoJson.h>
-// https://github.com/bblanchon/ArduinoJson/issues/731
+
 // ================================================================================
 // Variable definitions
 // ================================================================================
 #define SSID "Robotat"
 #define PASSWORD "iemtbmcit116"
-// #define SSID "HUAWEI Y8s"
-// #define PASSWORD "003831e381aa"
 
-BasicOTA OTA;
+BasicOTA OTA; // Object for Over-The-Air (OTA) Updates
 
 // ================================================================================
-// Funcionamiento b�sico del robot, ***NO MODIFICAR***
+// Definitions
 // ================================================================================
 uint8_t uart_send_buffer[32] = {0};              // buffer CBOR
-static const unsigned int control_time_ms = 100; // per�odo de muestreo del control
-volatile float phi_ell = 0;                      // en rpm
-volatile float phi_r = 0;                        // en rpm
-double WHEEL_RADIUS = (0.32/ 2);         // radio de las ruedas (en m)
-double DISTANCE_FROM_CENTER = (0.96 / 2); // distancia a ruedas (en m)
-// WiFi+Robotat
- const unsigned robot_id = 1;
+static const unsigned int control_time_ms = 100; // período de muestreo del control
+
+// Constants for WiFi connection and communication with Robotat
+const unsigned robot_id = 1; // TAG number here
 const char *ssid = "Robotat";
 const char *password = "iemtbmcit116";
 const char *host = "192.168.50.200";
@@ -50,27 +43,36 @@ int t1 = 0;
 int ti = 60;
 int t2 = 180;
 
-// control
+// control parameters and variables
 double temp[2];
 double q[4];
+volatile float phi_ell = 0;
+volatile float phi_r = 0;
+double WHEEL_RADIUS = (0.32 / 2);
+double DISTANCE_FROM_CENTER = (0.96 / 2);
 
 volatile float x, y, z, n, ex, ey, ez, roll, pitch, yaw, v, w;
- float goal_x = 1.5;
- float goal_y = -1.5;
+float goal_x = 1.5; // PLACEHOLDER FOR THE GOAL THAT WILL BE MODIFIED FROM THE GUI
+float goal_y = -1.5;
 
+// ================================================================================
+// Task for encoding and sending wheel speeds
+// ================================================================================
 void encode_send_wheel_speeds_task(void *p_params)
 {
+  // Control frequency settings
   TickType_t last_control_time;
   const TickType_t control_freq_ticks = pdMS_TO_TICKS(control_time_ms);
 
-  // Tiempo actual
+  // Initialize last control time
   last_control_time = xTaskGetTickCount();
 
   while (1)
   {
-    // Se espera a que se cumpla el per�odo de muestreo
+    // Wait for the control time period
     vTaskDelayUntil(&last_control_time, control_freq_ticks);
 
+    // Encode wheel speeds using CBOR and send them over Serial2
     TinyCBOR.Encoder.init(uart_send_buffer, sizeof(uart_send_buffer));
     TinyCBOR.Encoder.create_array(2);
     TinyCBOR.Encoder.encode_float(phi_ell);
@@ -80,13 +82,18 @@ void encode_send_wheel_speeds_task(void *p_params)
   }
 }
 // ================================================================================
+// Task for connecting to Robotat and receiving data
+// ================================================================================
+
 void connect2robotat_task(void *p_params)
 {
 
-  while (1) // loop()
+  while (1)
   {
+    // Check for available data from Robotat
     if (client.available())
     {
+      // Read and process data from Robotat
       client.write(msg2robotat);
       while (t1 < t2)
       {
@@ -96,11 +103,12 @@ void connect2robotat_task(void *p_params)
         if (c == '}')
           t1 = t2;
       }
-      // Serial.println(msg);
 
+      // Deserialize received JSON data
       DeserializationError err = deserializeJson(doc, msg);
       if (err == DeserializationError::Ok)
       {
+        // Extract data from JSON
         x = doc["data"][0].as<double>();
         y = doc["data"][1].as<double>();
         z = doc["data"][2].as<double>();
@@ -111,18 +119,6 @@ void connect2robotat_task(void *p_params)
 
         // Serial.print("x = ");
         // Serial.print(x);
-        // Serial.print(", y = ");
-        // Serial.print(y);
-        // Serial.print(", z = ");
-        // Serial.print(z);
-        // Serial.print(", n = ");
-        // Serial.print(n);
-        // Serial.print(", ex = ");
-        // Serial.print(ex);
-        // Serial.print(", ey = ");
-        // Serial.print(ey);
-        // Serial.print(", ez = ");
-        // Serial.println(ez);
       }
       else
       {
@@ -130,82 +126,76 @@ void connect2robotat_task(void *p_params)
         Serial.println(err.c_str());
       }
 
+      // Reset variables for the next iteration
       msg = "";
       t1 = 0;
     }
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS); // Delay to control the loop frequency
   }
 }
+
 // ================================================================================
 // Control
 // ================================================================================
 
 void control_algorithm_task(void *p_params)
 {
-  while (1) // loop()
+  while (1)
   {
-    
+
     q[0] = n;
     q[1] = ex;
     q[2] = ey;
     q[3] = ez;
-    // roll = atan2((q[0] * q[1] + q[2] * q[3]), 0.5 - (q[1] * q[1] + q[2] * q[2]));
-    // pitch = asin(2.0 * (q[0] * q[2] - q[1] * q[3]));
-    yaw = atan2(2*(q[1] * q[2] + q[0] * q[3]), 1 - 2*(q[2] * q[2] + q[3] * q[3]));
-    
-    // to degrees
-    // yaw *= (180.0 / PI);
-    if (robot_id == 8){
-    yaw = yaw + 3.05;
-    }// - 2.39; // desfase del marker
-    if (robot_id == 7){
+
+    yaw = atan2(2 * (q[1] * q[2] + q[0] * q[3]), 1 - 2 * (q[2] * q[2] + q[3] * q[3]));
+
+    // MARKER OFFSET DEPENDING ON ROBOT ID
+    if (robot_id == 8)
+    {
+      yaw = yaw + 3.05;
+    } 
+    if (robot_id == 7)
+    {
       yaw = yaw - 1.5708;
     }
-    if (robot_id == 1){
+    if (robot_id == 1)
+    {
       yaw = yaw;
     }
-    // yaw *= (180.0 / PI);
-    // pitch *= 180.0 / PI;
-    // roll *= 180.0 / PI;
-    
-    // Serial.print("theta: ");
-    // Serial.println(yaw);
+   
     control(goal_x, goal_y, x, y, yaw, temp);
-    // phi_ell = temp[0];
-    // phi_r = temp[1];
-
 
     v = temp[0];
     w = temp[1];
-    phi_ell = (v - w*DISTANCE_FROM_CENTER) / WHEEL_RADIUS; //rad/s;
-    phi_r = (v + w*DISTANCE_FROM_CENTER) / WHEEL_RADIUS; //rad/s;
-    Serial.print("phi_ell: ");
-    Serial.println(phi_ell);
-    Serial.print("phi_r: ");
-    Serial.println(phi_r);
-    Serial.println(" ");
-    // phi_ell = 400;
-    // phi_r = 0;
-    float limite = 300.0;
-    if (phi_ell > limite)
+    phi_ell = (v - w * DISTANCE_FROM_CENTER) / WHEEL_RADIUS; // rad/s;
+    phi_r = (v + w * DISTANCE_FROM_CENTER) / WHEEL_RADIUS;   // rad/s;
+
+    float limit = 300.0;
+    if (phi_ell > limit)
     {
       phi_ell = 0.0;
     }
-    if(phi_ell < -limite){
+    if (phi_ell < -limit)
+    {
       phi_ell = 0.0;
     }
-    if (phi_r > limite)
+    if (phi_r > limit)
     {
       phi_r = 0.0;
     }
-    if(phi_r < -limite){
+    if (phi_r < -limit)
+    {
       phi_r = 0.0;
     }
 
-
-    vTaskDelay(20 / portTICK_PERIOD_MS); // delay de 1 segundo (thread safe)
+    vTaskDelay(20 / portTICK_PERIOD_MS);
   }
 }
+
+// ================================================================================
+// Setup function
+// ================================================================================
 
 void setup()
 {
@@ -228,7 +218,7 @@ void setup()
   Serial.println("Ready");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
-  // Si alguna de sus librer�as requiere setup, colocarlo aqu�
+
   // WiFi+Robotat
   if (robot_id < 10)
   {
@@ -258,11 +248,16 @@ void setup()
   }
   else
     Serial.println("Connection failed");
-  // Creaci�n de tasks ***NO MODIFICAR***
+
+  // Create tasks for parallel execution
   xTaskCreate(encode_send_wheel_speeds_task, "encode_send_wheel_speeds_task", 1024 * 2, NULL, configMAX_PRIORITIES - 3, NULL);
   xTaskCreate(connect2robotat_task, "connect2robotat_task", 1024 * 4, NULL, configMAX_PRIORITIES - 1, NULL);
   xTaskCreate(control_algorithm_task, "control_algorithm_task", 1024 * 2, NULL, configMAX_PRIORITIES - 2, NULL);
 }
+
+// ================================================================================
+// Loop function (for handling OTA updates)
+// ================================================================================
 
 void loop()
 {

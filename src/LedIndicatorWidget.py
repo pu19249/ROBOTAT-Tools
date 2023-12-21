@@ -4,6 +4,9 @@ from PyQt5.QtWidgets import *
 # src from: https://github.com/nlamprian/pyqt5-led-indicator-widget
 
 class LedIndicator(QAbstractButton):
+    '''
+    This class is a LED like Widget. It can be used to display more info to the user as: whether or not the system is connected to the Robotat Network, among others.
+    '''
     scaledSize = 1000.0
 
     def __init__(self, parent=None):

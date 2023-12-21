@@ -8,12 +8,16 @@ from windows.map_coordinates import inverse_change_coordinates
 import numpy as np
 from typing import *
 
+### ---------------- END OF IMPORTS -----------------
+
 """
 This methods are meant to work with the GUI widgets (simulation tab). They are organized in a way
 that they can follow the simulation flow:
 1. Choose world
 2. Start animation
 3. Displayed useful data
+
+<A class could be created to manage attributes.>
 """
 # Define a dictionary to map controller names to controller functions
 controller_map = {
@@ -22,27 +26,61 @@ controller_map = {
     'lqi_controller': lqi_controller
 }
 
-# 
+
 def load_world(file_path: str):
+    '''
+    This function loads the info in the file path selected.
     
+    Attributes:
+    --------------
+    file_path: str
+        It takes the file path (in the GUI it can be taken with a button, file browser, text, etc.)
+    
+    Returns:
+    -------------
+    world
+        It is the JSON file from which JSON methods can be used.
+    '''
     with open(file_path) as f:
         world = json.load(f)
         return world
 
 def initialize_animation(world: dict):
-    
-    # define the animation dimensions based on the json information - initialize animation window
+    '''
+    Defines the animation dimensions based on the json information - initialize animation window
+
+    Attributes:
+    ---------------
+    world: dict
+        From this dict the dimensions (x, y) are taken.
+
+    Returns:
+    ---------------
+    animation_window
+        This is the Pygame object created.
+    '''
     animation_window = py_game_animation(
         world.get('x_dimension_arena'),
         world.get('y_dimension_arena')) 
 
-    #   animation_window.initialize()
     return animation_window
 
 
 def create_objects(world: dict, animation_window):
     """
+    This function creates the objects needed to calculate and display the simulation.
+
+    Attributes:
+    --------------
     animation_window : pygame object created
+        On this Pygame object some objects are added (as the robots characters)
+    world: dict
+        This dictionary (JSON world definition) contains the data for the simulation of the robots, as controllers, ID, initial position, etc.
+    
+    Returns:
+    -------------
+    Robots, Pololu
+        This lists contain the information for the robots to simulate
     """
     pololu = []
     characters = []
@@ -90,6 +128,23 @@ def create_objects(world: dict, animation_window):
     return robots, pololu
 
 def calculate_simulation(world, robots: list, pololu: list):
+    '''
+    This function calculates the simulation using the methods on the Robot_pololu class, for each of the robots created in the previous function. It also makes the needed changes to display the robots on the Pygame window correctly.
+
+    Attributes:
+    ---------------
+    world: dict
+        To get some other info for the simulation
+    Robots, Pololu: list
+        These are the objects created before, and are used to calculate the values based on the methods on the robots class.
+    
+    Returns:
+    ------------
+    x_vals_display, y_vals_display, theta_vals_display
+        This values are the ones used to display the robot on its different positions based on the calculus made (x, y, theta)
+    x_results_plt, y_results_plt, v_plot_robot, w_plot_robot
+        This values are the ones used to graph the results on the matplotlib widget
+    '''
     # Simulation params based on json
     dt = world['dt']
     t0 = world['t0']
@@ -117,7 +172,6 @@ def calculate_simulation(world, robots: list, pololu: list):
         traj = pololu[i].simulate_robot(dt, t0, tf, [current_goal[0]*100, current_goal[1]*100])
         x_results, y_results, theta_results = pololu[i].get_simulation_results()
         v_simulation, w_simulation = pololu[i].get_velocities_results()
-        # print(v_simulation)
         x_vals_display_robot = []
         y_vals_display_robot = []
         theta_vals_display_robot = []
@@ -132,7 +186,6 @@ def calculate_simulation(world, robots: list, pololu: list):
         for v, w in zip(v_simulation, w_simulation):
             v_display.append(v)
             w_display.append(w)
-        # print(v_display)
         v_plot.append(v_display)
         w_plot.append(w_display)
 
@@ -173,10 +226,11 @@ def calculate_simulation(world, robots: list, pololu: list):
     x_results_plt = x_results_plt[1:]
     y_results_plt = np.array(list(zip(*y_results_plt)))
     y_results_plt = y_results_plt[1:]
-    # print(v_plot_robot)
+
     return x_vals_display, y_vals_display, theta_vals_display, x_results_plt, y_results_plt, v_plot_robot, w_plot_robot
 
-def run_animation(animation_window, x_vals_display: np.ndarray, y_vals_display, theta_vals_display):
-    # print(x_vals_display, y_vals_display, theta_vals_display)
-    # run the animation with the results for each robot
+def run_animation(animation_window, x_vals_display: np.ndarray, y_vals_display: np.ndarray, theta_vals_display: np.ndarray):
+    '''
+    It runs the animation with the results for each robot.
+    '''
     animation_window.animate(x_vals_display, y_vals_display, theta_vals_display)

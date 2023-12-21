@@ -2,7 +2,17 @@ from sympy import symbols, sin, cos, atan2
 from sympy.utilities.codegen import codegen
 import chardet
 
+### ---------------- END OF IMPORTS ----------------
+
+'''
+This scripts defines the controller with simple functions, it has the same structure as the one used in the simulation. This file contains two functions, the first function defines the controller and also generates the C code for the v and w velocities. The second, gets the useful data to write it in the C file.
+'''
+
 def pid():
+    '''
+    This function generates the C code for the V velocity and W velocity, using Sympy functions for codegen. It returns the 'v' string and 'w' string which then is used to write it in the .c file.
+    '''
+
     # Define symbols
     x0, y0, theta0, goal_x, goal_y = symbols('x0 y0 theta0 goal_x goal_y')
 
@@ -45,7 +55,10 @@ def pid():
     return v_lines[0], w_lines[0]
 
 def control_file_pid():
-    print('se va a modificar para pid')
+    '''
+    This function takes the velocities from the previous function and opens the indicated file. In this case the control file is predefined so its name it's hardcoded. Changes can be made.
+    '''
+    
     v_result, w_result = pid()
     with open("ota/esp32ota_sim/src/codegen.c", 'rb') as file:
         result1 = chardet.detect(file.read())

@@ -1,5 +1,7 @@
 import csv
-
+'''
+This file was used to test how to write to a CSV file and add values as they were received. In this case a continuous incremental counter representing (x, y, theta).
+'''
 x = [0]
 y = [0]
 theta = [0]

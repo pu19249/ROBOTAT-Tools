@@ -1,9 +1,24 @@
 import numpy as np
 
 def pid_controller(xi, goal):
-    kp = 0.10  # Ajusta según tus preferencias
-    ki = 0.01  # Ajusta según tus preferencias
-    kd = 0.1  # Ajusta según tus preferencias
+    '''
+    Using NUMPY import, PID controller is defined.
+
+    Attributes:
+    --------------
+    xi: list
+        State variables
+    goal: list
+        [x goal, y goal]
+
+    Returns:
+    ----------
+    u: np.array
+        It contains the linear and angular velocities calculated with this controller.
+    '''
+    kp = 0.10  
+    ki = 0.01  
+    kd = 0.1  
 
     x = xi[0]
     y = xi[1]
@@ -20,5 +35,5 @@ def pid_controller(xi, goal):
     w = kp * eO + ki * eO + kd * eO
 
     u = np.array([v, w])
-    # print(u)
+
     return u

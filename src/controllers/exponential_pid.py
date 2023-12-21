@@ -2,6 +2,9 @@ import numpy as np
 
 
 def pid_exponential_cte():
+    '''
+    To keep the same structure for all controllers this approach is proposed. This function defines the constants and could be modified to edit them as user needs. For now, they are all predefined.
+    '''
     # PID position
     kpP = 1
     kiP = 0.0001
@@ -28,6 +31,21 @@ def pid_exponential_cte():
 
 
 def exponential_pid(xi, goal):
+    '''
+    Using NUMPY import, exponential PID controller is defined.
+
+    Attributes:
+    --------------
+    xi: list
+        State variables
+    goal: list
+        [x goal, y goal]
+
+    Returns:
+    ----------
+    u: np.array
+        It contains the linear and angular velocities calculated with this controller.
+    '''
     position_cte, orientation_cte, v0, alpha = pid_exponential_cte()
     kpO = orientation_cte[0]
     kiO = orientation_cte[1]

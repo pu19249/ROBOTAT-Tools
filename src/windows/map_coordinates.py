@@ -79,20 +79,3 @@ def change_coordinates(x, y, height, length):
         x_new = length/2 - x
         y_new = height/2 - y
     return x_new, y_new
-
-# if (x < 0 && y < 0)
-#     x = 190 + abs(x)*100;
-#     y = 240 + abs(y)*100;
-# elseif (x < 0 && y > 0)
-#     x = 190 + abs(x)*100;
-#     y = 240-y*100;
-# elseif (x > 0 && y < 0)
-#     x = 190-x*100;
-#     y = 240 + abs(y)*100;
-# else
-#     x = 190-x*100;
-#     y = 240-y*100;
-# end
-
-# x, y = change_coordinates(-0.06, 0.005, 960, 760)
-# print(x, y)

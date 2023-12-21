@@ -1,7 +1,6 @@
 import ctypes
 import sys
 import os
-import csv
 
 # Get the current script's directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -16,7 +15,10 @@ from windows.animation_window import *
 from robotat_3pi_Python import *
 from windows.map_coordinates import inverse_change_coordinates
 
-################ END OF IMPORTS ##############################
+### -------------- END OF IMPORTS --------------
+"""
+This file was used to make the monitoring tests. It's recommended to used this file to test the multiple marker monitoring, and also to use this file as a base to develop independent monitoring tools.
+"""
 
 # This solves scaling issues for the independent pygame window
 ctypes.windll.user32.SetProcessDPIAware()
@@ -42,16 +44,24 @@ y_results_raw = []
 
 
 # First we need to create the object that represents and updates the position and rotation of the Pololu img (first one robot only)
-characters = [(os.path.join(pictures_dir, "pololu_img_x.png"), 0, 0, 0), (os.path.join(pictures_dir, "pololu_img_x.png"), 100, 100, 0)]
+characters = [
+    (os.path.join(pictures_dir, "pololu_img_x.png"), 0, 0, 0),
+    (os.path.join(pictures_dir, "pololu_img_x.png"), 100, 100, 0),
+]
 
 
 # Prepare data as the animation window expects it (list of lists for each x, y, theta for each robot) according to how its received from the server (list of x, y, orientation)
+
+
+# This function is working for two markers
 def get_and_process_data(robotat, marker, representation):
     x_data = []
     y_data = []
     theta_data = []
 
-    for pose_data_list in get_pose_continuous(robotat, marker, representation, max_attempts=5):
+    for pose_data_list in get_pose_continuous(
+        robotat, marker, representation, max_attempts=5
+    ):
         if pose_data_list is not None:
             for marker_data in pose_data_list:
                 x_vals_real_time = [marker_data[0]]
@@ -65,6 +75,9 @@ def get_and_process_data(robotat, marker, representation):
                 # Additional processing or printing can be done here
 
     return x_data, y_data, theta_data
+
+
+# This function is working for one marker
 
 # def get_and_process_data(marker):
 #     try:
@@ -97,15 +110,19 @@ def map_data(x_vals_real_time, y_vals_real_time, theta_vals_real_time):
     x_vals_display_robot = []
     y_vals_display_robot = []
     theta_vals_display_robot = []
-    
-    for marker_x, marker_y, marker_theta in zip(x_vals_real_time, y_vals_real_time, theta_vals_real_time):
+
+    for marker_x, marker_y, marker_theta in zip(
+        x_vals_real_time, y_vals_real_time, theta_vals_real_time
+    ):
         x_mapped = []
         y_mapped = []
         theta_mapped = []
 
         for x, y, theta in zip(marker_x, marker_y, marker_theta):
             x_raw, y_raw = x, y
-            x_new_val, y_new_val = inverse_change_coordinates(x_raw * 100, y_raw * 100, 960, 760)
+            x_new_val, y_new_val = inverse_change_coordinates(
+                x_raw * 100, y_raw * 100, 960, 760
+            )
             theta_new_val = theta + 180
 
             x_mapped.append(x_new_val)
@@ -119,7 +136,6 @@ def map_data(x_vals_real_time, y_vals_real_time, theta_vals_real_time):
     return x_vals_display_robot, y_vals_display_robot, theta_vals_display_robot
 
 
-
 # MAIN TEST LOOP
 run_animation = True
 
@@ -127,15 +143,24 @@ run_animation = True
 
 
 def get_data():
-    x_vals_real_time, y_vals_real_time, theta_vals_real_time = get_and_process_data(robotat, [2, 1], 'eulxyz')
+    x_vals_real_time, y_vals_real_time, theta_vals_real_time = get_and_process_data(
+        robotat, [2, 1], "eulxyz"
+    )
 
     x_vals_display_robot, y_vals_display_robot, theta_vals_display_robot = map_data(
         x_vals_real_time, y_vals_real_time, theta_vals_real_time
     )
 
     # print(theta_vals_display_robot)
-    return x_vals_display_robot, y_vals_display_robot, theta_vals_display_robot, \
-        x_vals_real_time, y_vals_real_time, theta_vals_real_time
+    return (
+        x_vals_display_robot,
+        y_vals_display_robot,
+        theta_vals_display_robot,
+        x_vals_real_time,
+        y_vals_real_time,
+        theta_vals_real_time,
+    )
+
 
 data_source = lambda: get_data()
 animation_window = py_game_monitoring(850, 960, get_data)
@@ -146,13 +171,9 @@ animation_window.initialize()
 # Open the file in append mode once, outside the loop
 
 
-
-
 def animation_function():
     while True:
-        
         animation_window.start_animation()
-        
 
 
 if __name__ == "__main__":

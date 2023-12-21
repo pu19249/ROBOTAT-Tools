@@ -6,8 +6,17 @@ import warnings
 import struct
 from squaternion import Quaternion
 
+### ------------ END OF IMPORTS ------------
 
 def robotat_connect():
+    '''
+    This function connects the system with the Robotat server through a TCP connection, it returns the Python socket object.
+
+    Returns:
+    --------------
+    sock
+        TCP-socket object
+    '''
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_address = ("192.168.50.200", 1883)
 
@@ -22,11 +31,37 @@ def robotat_connect():
 
 
 def robotat_disconnect(tcp_obj):
+    '''
+    This function disconnects the system from the server.
+    
+    Attributes:
+    --------------
+    tcp_obj: socket.socket
+        TCP object from which a transaction of information can occur.
+    '''
     tcp_obj.sendall(tcp_obj, b"EXIT")
     print("Disconnected from Robotat Server.")
 
 
 def get_pose_continuous_multiple(tcp_obj, agents_ids, rotrep, max_attempts=10):
+    '''
+    This functions starts capturing data from the Optitrack system, it receives the position and orientation from the server. This version is for handling multiple markers and yielding the corresponding data.
+
+    Attributes:
+    ---------------
+    tcp_obj: socket.socket
+    agents_ids: list[int]
+        They are the ones from the markers in the Optitrack tags
+    rotrep: str
+        'quat' or 'eulxyz'
+    max_attempts: int
+        10 by default, proven to work fine with 5
+
+    Yields:
+    ----------------
+    mocap_data_var: list
+        Pose of the marker, the order of the data is [x position, y position, z position, and the orientation depends of the rotrep]
+    '''
     mocap_data_var = []
 
     for attempt in range(max_attempts):
@@ -63,6 +98,24 @@ def get_pose_continuous_multiple(tcp_obj, agents_ids, rotrep, max_attempts=10):
     yield None
 
 def get_pose_continuous(tcp_obj, agents_ids, rotrep, max_attempts=10):
+    '''
+    This functions starts capturing data from the Optitrack system, it receives the position and orientation from the server. This version is for one marker.
+
+    Attributes:
+    ---------------
+    tcp_obj: socket.socket
+    agents_ids: list[int]
+        They are the ones from the markers in the Optitrack tags
+    rotrep: str
+        'quat' or 'eulxyz'
+    max_attempts: int
+        10 by default, proven to work fine with 5
+
+    Yields:
+    ----------------
+    mocap_data_var: list
+        Pose of the marker, the order of the data is [x position, y position, z position, and the orientation depends of the rotrep]
+    '''
     for attempt in range(max_attempts):
         try:
             if min(agents_ids) > 0 and max(agents_ids) <= 100:
